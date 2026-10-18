@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Market & Research Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3249;
+      --accent: #4f8ef7;
+      --accent2: #7c5cd8;
+      --text: #e4e6f0;
+      --muted: #7a7f9a;
+      --success: #34d399;
+      --danger: #f87171;
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    header .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff;
+    }
+    header h1 { font-size: 17px; font-weight: 600; letter-spacing: .3px; }
+    header p  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    header .badge {
+      margin-left: auto;
+      background: rgba(79,142,247,.15);
+      border: 1px solid rgba(79,142,247,.3);
+      color: var(--accent);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: .4px;
+    }
+
+    /* ── Layout ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+    aside .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 4px 8px 2px;
+    }
+    aside button {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s;
+    }
+    aside button:hover  { background: var(--surface2); }
+    aside button.active { background: rgba(79,142,247,.18); color: var(--accent); }
+    aside button .icon  { font-size: 16px; width: 20px; text-align: center; }
+
+    /* ── Chat Area ── */
+    .chat-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .quick-prompts {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .quick-prompts button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .quick-prompts button:hover { border-color: var(--accent); color: var(--accent); }
+
+    #chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      max-width: 80%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .msg.user  { align-self: flex-end; align-items: flex-end; }
+    .msg.bot   { align-self: flex-start; align-items: flex-start; }
+
+    .msg .bubble {
+      padding: 11px 15px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .bubble {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.bot .bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .msg .meta { font-size: 11px; color: var(--muted); }
+
+    /* typing indicator */
+    .typing-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: blink 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink {
+      0%,80%,100% { opacity: .2; transform: scale(.8); }
+      40%         { opacity: 1;  transform: scale(1); }
+    }
+
+    /* ── Input Bar ── */
+    .input-bar {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    .input-bar textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      outline: none;
+      transition: border-color .15s;
+      min-height: 42px;
+      max-height: 140px;
+      line-height: 1.5;
+      font-family: inherit;
+    }
+    .input-bar textarea:focus { border-color: var(--accent); }
+    .input-bar textarea::placeholder { color: var(--muted); }
+
+    .input-bar button {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity .15s;
+    }
+    .input-bar button:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Welcome ── */
+    .welcome {
+      text-align: center;
+      margin: auto;
+      padding: 40px 20px;
+    }
+    .welcome .big-icon { font-size: 52px; margin-bottom: 14px; }
+    .welcome h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .welcome p  { font-size: 14px; color: var(--muted); max-width: 380px; margin: auto; line-height: 1.7; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">M</div>
+  <div>
+    <h1>Market &amp; Research Assistant</h1>
+    <p>Powered by Gemini AI — your intelligent market analyst</p>
+  </div>
+  <span class="badge">● LIVE</span>
+</header>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="section-label">Topics</div>
+    <button class="active" onclick="setTopic(this,'market')" >
+      <span class="icon">📈</span> Market Analysis
+    </button>
+    <button onclick="setTopic(this,'competitor')">
+      <span class="icon">🔍</span> Competitor Intel
+    </button>
+    <button onclick="setTopic(this,'trends')">
+      <span class="icon">🌐</span> Industry Trends
+    </button>
+    <button onclick="setTopic(this,'financial')">
+      <span class="icon">💹</span> Financial Data
+    </button>
+    <button onclick="setTopic(this,'consumer')">
+      <span class="icon">👥</span> Consumer Insights
+    </button>
+    <button onclick="setTopic(this,'startup')">
+      <span class="icon">🚀</span> Startup Scouting
+    </button>
+    <button onclick="setTopic(this,'risk')">
+      <span class="icon">⚠️</span> Risk Assessment
+    </button>
+    <button onclick="setTopic(this,'report')">
+      <span class="icon">📄</span> Research Report
+    </button>
+
+    <div class="section-label" style="margin-top:12px;">Actions</div>
+    <button onclick="clearChat()">
+      <span class="icon">🗑️</span> Clear Chat
+    </button>
+    <button onclick="exportChat()">
+      <span class="icon">⬇️</span> Export Chat
+    </button>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-wrapper">
+
+    <div class="quick-prompts" id="quick-prompts">
+      <button onclick="sendQuick(this)">📊 Analyze the EV market in 2025</button>
+      <button onclick="sendQuick(this)">📉 Top risks in emerging markets</button>
+      <button onclick="sendQuick(this)">🤖 AI industry growth forecast</button>
+      <button onclick="sendQuick(this)">💡 Disruptive startups to watch</button>
+      <button onclick="sendQuick(this)">📦 Supply chain resilience trends</button>
+    </div>
+
+    <div id="chat-log">
+      <div class="welcome" id="welcome">
+        <div class="big-icon">📊</div>
+        <h2>Intelligent Market &amp; Research Assistant</h2>
+        <p>Ask me about market trends, competitor analysis, financial insights, industry forecasts, or generate a research report — powered by Gemini AI.</p>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <textarea id="user-input" rows="1" placeholder="Ask about markets, trends, companies, research…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="Send">&#10148;</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API_KEY   = "";
+  const API_MODEL = "gemini-3.5-flash-lite";
+  const API_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
+
+  // Topic → system prompt
+  const TOPIC_PROMPTS = {
+    market:     "You are an expert market analyst. Provide deep, data-driven market analysis, size estimations, growth rates, and strategic insights.",
+    competitor: "You are a competitive intelligence specialist. Analyze competitors, their strategies, strengths, weaknesses, and market positioning.",
+    trends:     "You are an industry trends researcher. Identify and explain emerging trends, disruptions, and future directions across industries.",
+    financial:  "You are a financial research analyst. Provide financial insights, valuation analysis, revenue trends, and investment perspectives.",
+    consumer:   "You are a consumer behavior expert. Analyze consumer patterns, preferences, sentiment, and behavioral trends.",
+    startup:    "You are a venture capital researcher. Scout promising startups, evaluate their potential, business models, and competitive moats.",
+    risk:       "You are a risk assessment specialist. Identify market, operational, regulatory, and geopolitical risks with mitigation strategies.",
+    report:     "You are a professional research report writer. Structure responses as concise, well-organized reports with key findings, data points, and recommendations.",
+  };
+
+  let currentTopic = "market";
+  let history = [];  // {role, parts}[]
+
+  function setTopic(btn, topic) {
+    document.querySelectorAll("aside button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentTopic = topic;
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 140) + "px";
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function sendQuick(btn) {
+    const text = btn.textContent.trim().replace(/^[^\s]+\s/, "");
+    document.getElementById("user-input").value = text;
+    sendMessage();
+  }
+
+  function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function appendMsg(role, text) {
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+
+    const log = document.getElementById("chat-log");
+    const div = document.createElement("div");
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="bubble">${escHtml(text)}</div>
+      <div class="meta">${nowTime()}</div>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  function showTyping() {
+    const log = document.getElementById("chat-log");
+    const div = document.createElement("div");
+    div.className = "msg bot";
+    div.id = "typing-indicator";
+    div.innerHTML = `<div class="bubble typing-dots"><span></span><span></span><span></span></div>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById("typing-indicator");
+    if (el) el.remove();
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  async function sendMessage() {
+    const input  = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const text   = input.value.trim();
+    if (!text) return;
+
+    input.value = "";
+    input.style.height = "auto";
+    sendBtn.disabled = true;
+
+    appendMsg("user", text);
+
+    // Build history entry
+    history.push({ role: "user", parts: [{ text }] });
+
+    // Build system instruction + conversation
+    const systemInstruction = TOPIC_PROMPTS[currentTopic] +
+      " Always be concise, professional, and cite trends or data when relevant. Format bullet points with • and use clear headings where appropriate.";
+
+    const requestBody = {
+      system_instruction: { parts: [{ text: systemInstruction }] },
+      contents: history,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      }
+    };
+
+    showTyping();
+
+    try {
+      const res  = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errMsg = data?.error?.message || `HTTP ${res.status}`;
+        throw new Error(errMsg);
+      }
+
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+      removeTyping();
+      appendMsg("bot", reply);
+      history.push({ role: "model", parts: [{ text: reply }] });
+
+    } catch (err) {
+      removeTyping();
+      appendMsg("bot", `⚠️ Error: ${err.message}`);
+    }
+
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  function clearChat() {
+    history = [];
+    const log = document.getElementById("chat-log");
+    log.innerHTML = `
+      <div class="welcome" id="welcome">
+        <div class="big-icon">📊</div>
+        <h2>Intelligent Market &amp; Research Assistant</h2>
+        <p>Ask me about market trends, competitor analysis, financial insights, industry forecasts, or generate a research report — powered by Gemini AI.</p>
+      </div>`;
+  }
+
+  function exportChat() {
+    const msgs = document.querySelectorAll(".msg .bubble");
+    if (!msgs.length) return alert("No chat to export.");
+    let out = "Market & Research Assistant — Chat Export\n";
+    out += "==========================================\n\n";
+    document.querySelectorAll(".msg").forEach(m => {
+      const role   = m.classList.contains("user") ? "You" : "Assistant";
+      const bubble = m.querySelector(".bubble").textContent.trim();
+      const time   = m.querySelector(".meta")?.textContent || "";
+      out += `[${role}] ${time}\n${bubble}\n\n`;
+    });
+    const blob = new Blob([out], { type: "text/plain" });
+    const a    = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(blob),
+      download: "market-research-chat.txt",
+    });
+    a.click();
+  }
+</script>
+</body>
+</html>
